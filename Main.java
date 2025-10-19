@@ -1,36 +1,322 @@
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 
 public class Main {
     public static void main(String[] args) {
-        Bouquet bouquet = new Bouquet();
+        Rose rose = new Rose(6.0, 40, 9, "Red");
+        Tulip tulip = new Tulip(3.0, 25, 8, "Yellow ");
+        Lily lily = new Lily(4.5, 35, 10, "White");
+        Rose rose2 = new Rose(5.2, 28, 9, "Pink");
 
-        bouquet.addFlower(new Rose(6.0, 40, 9, "Red"));
-        bouquet.addFlower(new Tulip(3.5, 35, 8, "Yellow"));
-        bouquet.addFlower(new Lily(5.5, 45, 10, "White"));
-        bouquet.addFlower(new Rose(5.8, 38, 7, "Pink"));
+        // 1. add()
+        FlowerSet<Flower> flowerSet = new FlowerSet<>();
+        flowerSet.add(rose);
+        flowerSet.add(tulip);
+        flowerSet.add(lily);
+        System.out.println(toRedString("After add(): ") + flowerSet);
 
-        bouquet.addAccessory(new Accessory("Wrapping paper", 1.5));
-        bouquet.addAccessory(new Accessory("Ribbon", 0.5));
+        // 2. addAll()
+        flowerSet.addAll(List.of(rose2, tulip));
+        System.out.println(toRedString("After addAll(): ") + flowerSet);
 
-        System.out.println("=== INITIAL BOUQUET ===");
-        bouquet.printBouquet();
+        // 3. contains()
+        System.out.println(toRedString("Contains Lily? ") + flowerSet.contains(lily));
 
-        System.out.println("\n=== SORTING BY FRESHNESS ===");
-        bouquet.sortByFreshness();
-        bouquet.printBouquet();
+        // 4. containsAll()
+        System.out.println(toRedString("Contains all [Rose, Lily]? ") + flowerSet.containsAll(List.of(rose, lily)));
 
-        System.out.println("\n=== FINDING FLOWERS WITH STEM LENGTH BETWEEN 37 AND 42 CM ===");
-        List<Flower<?>> found = bouquet.findByStemLength(37, 42);
-        if (found.isEmpty()) {
-            System.out.println("No flowers found with the specified stem length range.");
-        } else {
-            found.forEach(f -> System.out.println("  - " + f));
+        // 5. iterator()
+        System.out.print(toRedString("Iterating using iterator(): "));
+        for (Flower f : flowerSet) {
+            System.out.print(f.getName() + " ");
         }
+        System.out.println();
+
+        // 6. size() and isEmpty()
+        System.out.println(toRedString("Size: ") + flowerSet.size());
+        System.out.println(toRedString("Is empty? ") + flowerSet.isEmpty());
+
+        // 7. remove()
+        flowerSet.remove(rose);
+        System.out.println(toRedString("After remove(Rose): ") + flowerSet);
+
+        // 8. retainAll()
+        flowerSet.retainAll(List.of(lily));
+        System.out.println(toRedString("After retainAll([Lily]): ") + flowerSet);
+
+        // 9. addAll() again
+        flowerSet.addAll(List.of(rose, tulip, rose2));
+        System.out.println(toRedString("After re-adding flowers: ") + flowerSet);
+
+        // 10. removeAll()
+        flowerSet.removeAll(List.of(rose, tulip));
+        System.out.println(toRedString("After removeAll([Rose, Tulip]): ") + flowerSet);
+
+        // 11. toArray()
+        Object[] array = flowerSet.toArray();
+        System.out.println(toRedString("toArray(): ") + Arrays.toString(array));
+
+        // 12. clear()
+        flowerSet.clear();
+        System.out.println(toRedString("After clear(): ") + flowerSet + toRedString(", isEmpty = ") + flowerSet.isEmpty());
+    }
+
+    private static String toRedString(String text) {
+        String ansiRed = "\u001B[31m";
+        String ansiReset = "\u001B[0m";
+        return ansiRed + text + ansiReset;
     }
 }
+
+/**
+ * A custom generic implementation of the {@link Set} interface that stores
+ * unique elements using a singly linked list as its internal data structure.
+ *
+ * This class is built upon the generic {@code Flower} class from Lab 5
+ *
+ * @param <T> the type of elements maintained by this set (must extend {@code Flower})
+ */
+class FlowerSet<T extends Flower> implements Set<T> {
+
+    /** The head node of the singly linked list. */
+    private Node<T> head;
+
+    /** The number of elements in the set. */
+    private int size;
+
+    /**
+     * Inner class representing a node in the singly linked list.
+     *
+     * @param <T> the type of the stored value
+     */
+    private static class Node<T> {
+        T value;
+        Node<T> next;
+
+        Node(T value) {
+            this.value = value;
+        }
+    }
+
+    /**
+     * Default constructor that creates an empty.
+     */
+    public FlowerSet() {
+        this.head = null;
+        this.size = 0;
+    }
+
+    /**
+     * Constructor that creates a FlowerSet containing one element.
+     *
+     * @param element the single element to add to the set
+     */
+    public FlowerSet(T element) {
+        this();
+        add(element);
+    }
+
+    /**
+     * Constructor that creates a FlowerSet from an existing collection.
+     *
+     * @param collection the collection of elements to add to this set
+     */
+    public FlowerSet(Collection<? extends T> collection) {
+        this();
+        addAll(collection);
+    }
+
+    @Override
+    public boolean add(T element) {
+        if (contains(element)) {
+            return false;
+        }
+        Node<T> newNode = new Node<>(element);
+        newNode.next = head;
+        head = newNode;
+        size++;
+        return true;
+    }
+
+    @Override
+    public boolean addAll(Collection<? extends T> collection) {
+        boolean modified = false;
+        for (T element : collection) {
+            if (add(element)) {
+                modified = true;
+            }
+        }
+        return modified;
+    }
+
+    @Override
+    public void clear() {
+        head = null;
+        size = 0;
+    }
+
+    @Override
+    public boolean contains(Object o) {
+        Node<T> current = head;
+        while (current != null) {
+            if (current.value.equals(o)) {
+                return true;
+            }
+            current = current.next;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean containsAll(Collection<?> c) {
+        for (Object o : c) {
+            if (!contains(o)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    @Override
+    public boolean isEmpty() {
+        return size == 0;
+    }
+
+    @Override
+    public Iterator<T> iterator() {
+        return new Iterator<T>() {
+            private Node<T> current = head;
+
+            @Override
+            public boolean hasNext() {
+                return current != null;
+            }
+
+            @Override
+            public T next() {
+                if (current == null) {
+                    throw new NoSuchElementException();
+                }
+                T value = current.value;
+                current = current.next;
+                return value;
+            }
+        };
+    }
+
+    @Override
+    public boolean remove(Object o) {
+        Node<T> current = head;
+        Node<T> prev = null;
+
+        while (current != null) {
+            if (current.value.equals(o)) {
+                if (prev == null) {
+                    head = current.next;
+                } else {
+                    prev.next = current.next;
+                }
+                size--;
+                return true;
+            }
+            prev = current;
+            current = current.next;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean removeAll(Collection<?> c) {
+        boolean modified = false;
+        for (Object o : c) {
+            if (remove(o)) {
+                modified = true;
+            }
+        }
+        return modified;
+    }
+
+    @Override
+    public boolean retainAll(Collection<?> c) {
+        boolean modified = false;
+        Node<T> current = head;
+        Node<T> prev = null;
+
+        while (current != null) {
+            if (!c.contains(current.value)) {
+                if (prev == null) {
+                    head = current.next;
+                } else {
+                    prev.next = current.next;
+                }
+                size--;
+                modified = true;
+            } else {
+                prev = current;
+            }
+            current = current.next;
+        }
+        return modified;
+    }
+
+    @Override
+    public int size() {
+        return size;
+    }
+
+    @Override
+    public Object[] toArray() {
+        Object[] array = new Object[size];
+        Node<T> current = head;
+        int index = 0;
+        while (current != null) {
+            array[index++] = current.value;
+            current = current.next;
+        }
+        return array;
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public <E> E[] toArray(E[] a) {
+        if (a.length < size) {
+            a = (E[]) java.lang.reflect.Array.newInstance(a.getClass().getComponentType(), size);
+        }
+        Node<T> current = head;
+        int index = 0;
+        Object[] result = a;
+        while (current != null) {
+            result[index++] = current.value;
+            current = current.next;
+        }
+        if (a.length > size) {
+            a[size] = null;
+        }
+        return a;
+    }
+
+    /**
+     * Returns a string representation of the set.
+     *
+     * @return a formatted string listing all flowers in the set
+     */
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder("[");
+        Node<T> current = head;
+        while (current != null) {
+            sb.append(current.value);
+            if (current.next != null) {
+                sb.append(",\n\t");
+            }
+            current = current.next;
+        }
+        sb.append("]");
+        return sb.toString();
+    }
+}
+
+
+//LAB 5
 
 /**
  * The abstract generic base class that represents a flower.
